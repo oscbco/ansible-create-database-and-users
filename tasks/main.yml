@@ -1,0 +1,38 @@
+- name: APP DATABASE Create database owner as an OS         user
+  user: name={{ userdba }} createhome=no shell=/bin/bash
+
+- name: APP DATABASE Create database owner as a  postgresql role
+  become: yes
+  become_user: postgres
+  become_method: sudo
+  postgresql_user: name={{ userdba }} password={{ userdba_password }} role_attr_flags=NOCREATEROLE,NOSUPERUSER
+
+- name: APP DATABASE Add Service-Acccount for this application
+  user: name={{ userweb }} shell=/usr/sbin/nologin createhome=yes
+
+- name: APP DATABASE Set privileges for home directory
+  file: path=/home/{{ userweb }} state=directory owner={{ userweb }} group={{ userweb }} mode="u=rwx,g=rx,o=" recurse=yes
+
+- name: APP DATABASE Create database user  as a  postgresql role
+  become: yes
+  become_user: postgres
+  become_method: sudo
+  postgresql_user: name={{ userweb }} role_attr_flags=NOCREATEROLE,NOSUPERUSER
+
+- name: APP DATABASE Create database {{ db }}
+  become: yes
+  become_user: postgres
+  become_method: sudo
+  postgresql_db: name={{ db }} owner={{ userdba }} encoding='UTF-8' template='template0'
+
+- name: APP DATABASE Allow peer connection for database owner {{ userdba }}
+  lineinfile: dest=/etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf state=present
+              line=" local   {{ db }}             {{ userdba }}                                 peer"
+
+
+- name: APP DATABASE Allow peer connection for database user  {{ userweb }}
+  lineinfile: dest=/etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf state=present
+              line=" local   {{ db }}             {{ userweb }}                                 peer"
+
+- name: APP add www-data to the {{ userweb }} group
+  user: name=www-data groups={{ userweb }}
