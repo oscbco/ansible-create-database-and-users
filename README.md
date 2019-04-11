@@ -1,7 +1,7 @@
 Role Name
 =========
 
-Install Node.js from NodeSource
+Role for creating the database and users (database and os) of this application
 
 Requirements
 ------------
@@ -20,8 +20,12 @@ Example Playbook
     - hosts: servers
       roles:
         - {
-            role: oscbco.install_nodejs,
-            node_version: 10.x
+            role: oscbco.create_database_and_users,
+            userdba: "app-dba",
+            userdba_password: $ANSIBLE_VAULT;...,
+            userweb: "app-web",
+            db:      "app-db",
+            postgresql_version: 11
           }
 
 License
