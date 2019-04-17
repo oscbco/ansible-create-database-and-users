@@ -10,7 +10,7 @@
 - name: APP DATABASE Add Service-Acccount for this application
   user: name={{ userweb }} shell=/usr/sbin/nologin createhome=yes
 
-- name: APP DATABASE Set privileges for home directory
+- name: APP DATABASE Recursively set privileges for home directory
   file: path=/home/{{ userweb }} state=directory owner={{ userweb }} group={{ userweb }} mode="u=rwx,g=rx,o=" recurse=yes
 
 - name: APP DATABASE Create database user  as a  postgresql role
