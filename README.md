@@ -9,7 +9,10 @@ Requirements
 Role Variables
 --------------
 
-node_version: Node.js version to install
+userdba: The owner of the application database
+db: The name of the database
+postgresql_version: This version is used to find the pg_hba.conf file
+userdba_password: The password for the dba
 
 Dependencies
 ------------
@@ -36,4 +39,4 @@ MIT
 Author Information
 ------------------
 
-oscbco.dev
+oscbco.me

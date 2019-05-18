@@ -1,7 +1,7 @@
 galaxy_info:
   author: Oscar Barrera
-  role_name: Role for creating the database and users (database and os) of this application
-  description: Role for installing NodeJS
+  role_name: create-database-and-users
+  description: Role for creating the database and users (database and os) of this application
   license: license (MIT)
   min_ansible_version: 2.5
   platforms:
