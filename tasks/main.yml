@@ -38,7 +38,7 @@
     privs: SELECT,INSERT,UPDATE,DELETE
     type: default_privs
     objs: ALL_IN_SCHEMA
-    role: {{ userweb }}
+    role: "{{ userweb }}"
 
 - name: APP add www-data to the {{ userweb }} group
   user: name=www-data groups={{ userweb }}
