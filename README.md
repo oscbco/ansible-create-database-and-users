@@ -9,10 +9,9 @@ Requirements
 Role Variables
 --------------
 
-userdba: The owner of the application database
+userdba: The owner of the database
+userweb: The service account for the application
 db: The name of the database
-postgresql_version: This version is used to find the pg_hba.conf file
-userdba_password: The password for the dba
 
 Dependencies
 ------------
@@ -25,10 +24,8 @@ Example Playbook
         - {
             role: oscbco.create_database_and_users,
             userdba: "app-dba",
-            userdba_password: $ANSIBLE_VAULT;...,
             userweb: "app-web",
-            db:      "app-db",
-            postgresql_version: 11
+            db:      "app-db"
           }
 
 License
