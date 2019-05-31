@@ -1,41 +1,50 @@
-- name: APP DATABASE Create service acccount for this application
+- name: APP DATABASE Create service account for this application
   user: name={{ userweb }} shell=/usr/sbin/nologin createhome=yes
 
+# The {{ appdir }}/public folder must be accessed by nginx which is run by the www-data user
+- name: APP add www-data to the {{ userweb }} group
+  user: name=www-data groups={{ userweb }}
+
 - name: APP DATABASE Create database owner as an OS         user
-  user: name={{ userdba }} createhome=yes shell=/bin/bash
+  user: name={{ userdba }} shell=/bin/bash         createhome=yes
 
 - name: APP DATABASE Create database owner as a  postgresql role
-  postgresql_user: name="{{ userdba }}" password="{{ userdba_password }}" role_attr_flags=NOCREATEROLE,NOSUPERUSER login_host="/var/run/postgresql" login_unix_socket="/var/run/postgresql/11-main.pid" login_user=postgres
+  postgresql_user: name={{ userdba }} role_attr_flags=NOCREATEROLE,NOSUPERUSER login_host="/var/run/postgresql" login_user=postgres
   become: yes
   become_user: postgres
   become_method: sudo
 
 - name: APP DATABASE Create database user  as a  postgresql role
-  postgresql_user: name={{ userweb }} role_attr_flags=NOCREATEROLE,NOSUPERUSER login_host="/var/run/postgresql" login_unix_socket="/var/run/postgresql/11-main.pid" login_user=postgres
+  postgresql_user: name={{ userweb }} role_attr_flags=NOCREATEROLE,NOSUPERUSER login_host="/var/run/postgresql" login_user=postgres
   become: yes
   become_user: postgres
   become_method: sudo
 
 - name: APP DATABASE Create database {{ db }}
-  postgresql_db: name={{ db }} owner={{ userdba }} encoding='UTF-8' template='template0' login_host="/var/run/postgresql" login_unix_socket="/var/run/postgresql/11-main.pid" login_user=postgres
+  postgresql_db: name={{ db }} owner={{ userdba }} encoding='UTF-8' template='template0' login_host="/var/run/postgresql" login_user=postgres
+  become: yes
+  become_user: postgres
+  become_method: sudo
+
+- name: HELPER Return pg_hba.conf location
+  command: psql postgres -U postgres -c 'SHOW hba_file' -t | head -n 1
+  changed_when: false
+  register: hba_file
   become: yes
   become_user: postgres
   become_method: sudo
 
 - name: APP DATABASE Allow peer connection for database owner {{ userdba }}
-  lineinfile: dest=/etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf state=present
+  lineinfile: dest={{ hba_file.stdout | trim }} state=present
               line=" local   {{ db }}             {{ userdba }}                                 peer"
 
 
 - name: APP DATABASE Allow peer connection for database user  {{ userweb }}
-  lineinfile: dest=/etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf state=present
+  lineinfile: dest={{ hba_file.stdout | trim }} state=present
               line=" local   {{ db }}             {{ userweb }}                                 peer"
 
 - name: APP DATABASE GRANT MDL privileges to {{ userweb }}
-  postgresql_privs: db="{{ db }}" state=present privs=SELECT,INSERT,UPDATE,DELETE type=default_privs objs=TABLES role="{{ userweb }}" login_host="/var/run/postgresql" login_unix_socket="/var/run/postgresql/11-main.pid" login_user={{ userdba }}
+  postgresql_privs: db={{ db }} state=present privs=SELECT,INSERT,UPDATE,DELETE type=default_privs objs=TABLES role="{{ userweb }}" login_host="/var/run/postgresql" login_user={{ userdba }}
   become: yes
   become_user: "{{ userdba }}"
   become_method: sudo
-
-- name: APP add www-data to the {{ userweb }} group
-  user: name=www-data groups={{ userweb }}
