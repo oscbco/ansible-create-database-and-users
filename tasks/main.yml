@@ -6,10 +6,10 @@
   user: name=www-data groups={{ userweb }}
 
 - name: APP DATABASE Create database owner as an OS         user
-  user: name={{ userdba }} shell=/bin/bash         createhome=yes
+  user: name={{ userdba }} shell=/bin/bash createhome=yes
 
 - name: APP DATABASE Create database owner as a  postgresql role
-  postgresql_user: name={{ userdba }} role_attr_flags=NOCREATEROLE,NOSUPERUSER login_host="/var/run/postgresql" login_user=postgres
+  postgresql_user: name={{ userdba }} role_attr_flags=NOCREATEROLE,NOSUPERUSER login_host="/var/run/postgresql" login_user=postgres password={{ password_dba }}  encrypted=true
   become: yes
   become_user: postgres
   become_method: sudo
@@ -38,6 +38,9 @@
   lineinfile: dest={{ hba_file.stdout | trim }} state=present
               line=" local   {{ db }}             {{ userdba }}                                 peer"
 
+- name: APP DATABASE Allow md5 connection for database owner {{ userdba }}
+  lineinfile: dest={{ hba_file.stdout | trim }} state=present
+              line=" host    {{ db }}             {{ userdba }}              0.0.0.0/0          md5"
 
 - name: APP DATABASE Allow peer connection for database user  {{ userweb }}
   lineinfile: dest={{ hba_file.stdout | trim }} state=present
@@ -47,4 +50,10 @@
   postgresql_privs: db={{ db }} state=present privs=SELECT,INSERT,UPDATE,DELETE type=default_privs objs=TABLES role="{{ userweb }}" login_host="/var/run/postgresql" login_user={{ userdba }}
   become: yes
   become_user: "{{ userdba }}"
+  become_method: sudo
+
+- name: Listen from all addresses
+  postgresql_set: name=listen_addresses value="*" login_host="/var/run/postgresql" login_user=postgres
+  become: yes
+  become_user: postgres
   become_method: sudo
